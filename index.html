@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Notes Keeper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #noteInput, #searchInput {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        #addBtn {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        #addBtn:hover {
+            background: #0056b3;
+        }
+        .note {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .note textarea {
+            width: 100%;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 16px;
+            color: #333;
+            outline: none;
+        }
+        .actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+        .actions button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 4px;
+        }
+        .actions button:hover {
+            text-decoration: underline;
+        }
+        #noNotes {
+            text-align: center;
+            color: #888;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Notes Keeper</h1>
+        <input type="text" id="searchInput" placeholder="Search notes...">
+        <textarea id="noteInput" rows="3" placeholder="Write a note..."></textarea>
+        <button id="addBtn">Add Note</button>
+        <div id="notesList"></div>
+        <div id="noNotes" style="display:none;">No notes found.</div>
+    </div>
+    <script>
+        let notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        let editingIndex = null;
+
+        function renderNotes(filter = '') {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+            let filteredNotes = notes.filter(note => note.toLowerCase().includes(filter.toLowerCase()));
+            if (filteredNotes.length === 0) {
+                document.getElementById('noNotes').style.display = 'block';
+                return;
+            }
+            document.getElementById('noNotes').style.display = 'none';
+            filteredNotes.forEach((note, idx) => {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'note';
+                noteDiv.innerHTML = `
+                    <textarea rows="2" readonly>${note}</textarea>
+                    <div class="actions">
+                        <button onclick="editNote(${notes.indexOf(note)})">Edit</button>
+                        <button onclick="deleteNote(${notes.indexOf(note)})">Delete</button>
+                    </div>
+                `;
+                notesList.appendChild(noteDiv);
+            });
+        }
+
+        function addNote() {
+            const noteInput = document.getElementById('noteInput');
+            const noteText = noteInput.value.trim();
+            if (!noteText) return;
+            if (editingIndex !== null) {
+                notes[editingIndex] = noteText;
+                editingIndex = null;
+                document.getElementById('addBtn').textContent = 'Add Note';
+            } else {
+                notes.push(noteText);
+            }
+            noteInput.value = '';
+            saveNotes();
+            renderNotes(document.getElementById('searchInput').value);
+        }
+
+        function editNote(index) {
+            document.getElementById('noteInput').value = notes[index];
+            editingIndex = index;
+            document.getElementById('addBtn').textContent = 'Update Note';
+        }
+
+        function deleteNote(index) {
+            notes.splice(index, 1);
+            if (editingIndex === index) {
+                editingIndex = null;
+                document.getElementById('noteInput').value = '';
+                document.getElementById('addBtn').textContent = 'Add Note';
+            }
+            saveNotes();
+            renderNotes(document.getElementById('searchInput').value);
+        }
+
+        function saveNotes() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        document.getElementById('addBtn').addEventListener('click', addNote);
+        document.getElementById('searchInput').addEventListener('input', function() {
+            renderNotes(this.value);
+        });
+
+        renderNotes();
+    </script>
+</body>
+</html>
